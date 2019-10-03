@@ -146,7 +146,18 @@ const getWinner = () => {
     console.log(
       `${handResults[0].id} Won the match with a ${handResults[0].rank}`
     );
+
+    potToPlayer(handResults[0].id, gameControl.currentPot);
+    resetGame();
 };
+
+const potToPlayer = (socketId, potValue) => {
+  const winningPlayer = gameControl.players.filter(
+    player => player.id === socketId
+  )[0];
+
+  winningPlayer.bankroll += gameControl.currentPot;
+}
 const bet = (socketId, betVal) => {
   const currentPlayer = gameControl.players.filter(
     player => player.id === socketId
@@ -156,7 +167,7 @@ const bet = (socketId, betVal) => {
   gameControl.currentPot += betVal;
   gameControl.currentBet += betVal;
   currentPlayer.bankroll -= betVal;
-  currentPlayer.currentBet += betVal;
+  currentPlayer.playerBet += betVal;
 
   console.log(`Player ${currentPlayer.id} is betting ${betVal}`);
   gameControl.players.forEach(player => {
@@ -169,8 +180,8 @@ const call = (socketID, callVal) => {
     player => player.id === socketID
   )[0];
 
-  gameControl.currentPot += callVal;
-  currentPlayer.bankroll -= callVal;
+  gameControl.currentPot += callVal - currentPlayer.playerBet;
+  currentPlayer.bankroll -= callVal - currentPlayer.playerBet;
 };
 
 const raise = (socketId, betVal) => {
@@ -178,10 +189,11 @@ const raise = (socketId, betVal) => {
     player => player.id === socketId
   )[0];
 
+  let raiseVal = betVal + gameControl.currentBet;
   //Add money to pot and subtract from user bank
-  gameControl.currentPot += betVal;
-  currentPlayer.bankroll -= betVal;
-  currentPlayer.currentBet += betVal;
+  gameControl.currentPot += raiseVal - currentPlayer.playerBet;
+  currentPlayer.bankroll -= raiseVal - currentPlayer.playerBet;
+  currentPlayer.playerBet += raiseVal - currentPlayer.playerBet;
   gameControl.currentBet += betVal;
 
   console.log(`Player ${currentPlayer.id} is raising ${betVal}`);
@@ -199,7 +211,7 @@ const checkActionsCompleted = () => {
 const resetPlayerAction = () => {
   for (let i = 0; i < gameControl.players.length; i++) {
     gameControl.players[i].actionCompleted = false;
-    gameControl.players[i].currentBet = 0;
+    gameControl.players[i].playerBet = 0;
   }
   gameControl.currentBet = 0;
 };
@@ -207,7 +219,11 @@ const resetPlayerAction = () => {
 const fold = socketID => {
   const playerWinner = gameControl.players.filter(
     player => player.id !== socketID
-  );
+  )[0];
+
+  console.log(playerWinner);
+  potToPlayer(playerWinner.id,gameControl.currentPot);
+  resetGame();
   //TODO: give pot to player and reset game;
 };
 const check = socketID => {

@@ -46,6 +46,8 @@ class Table extends Component {
     console.log("emitting Raise");
     const betAmmount = this.state.currentRaise;
     socket.emit("raise", betAmmount);
+    this.setState({currentRaise : 0});
+
   };
   bet = () => {
     console.log("emitting Bet");
