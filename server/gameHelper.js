@@ -240,10 +240,7 @@ const check = socketID => {
       }
     }
   }
-  if (checkActionsCompleted()) {
-    resetPlayerAction();
-    dealBoard();
-  }
+
 };
 module.exports = {
   gameControl,
@@ -258,5 +255,8 @@ module.exports = {
   removePlayer,
   raise,
   fold,
-  call
+  call,
+  checkActionsCompleted,
+  resetPlayerAction
+
 };

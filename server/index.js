@@ -14,7 +14,9 @@ const {
   removePlayer,
   raise,
   fold,
-  call
+  call,
+  checkActionsCompleted,
+  resetPlayerAction
 } = require("./gameHelper");
 const app = express();
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -84,8 +86,21 @@ io.on("connection", socket => {
     io.sockets.emit("gameControl", gameControl);
   });
 
-  socket.on("check", event => {
+  socket.on("check", async (event) => {
     check(socket.id);
+    if (checkActionsCompleted()) {
+      resetPlayerAction();
+      await dealBoard();
+      if(gameControl.gameState === "end")
+      {
+        flipCards();
+        setTimeout(() => {
+          resetGame();
+          io.sockets.emit("gameControl", gameControl);
+        }, 3000);
+  
+      }
+    }
     io.sockets.emit("gameControl", gameControl);
   });
 
