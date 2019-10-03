@@ -56,19 +56,19 @@ io.on("connection", socket => {
       io.sockets.emit("gameControl", gameControl);
     }
   });
-  socket.on("dealBoard", async() => {
-    await dealBoard();
-    if(gameControl.gameState === "end")
-    {
-      flipCards();
-      setTimeout(() => {
-        resetGame();
-        io.sockets.emit("gameControl", gameControl);
-      }, 3000);
+  // socket.on("dealBoard", async() => {
+  //   await dealBoard();
+  //   if(gameControl.gameState === "end")
+  //   {
+  //     flipCards();
+  //     setTimeout(() => {
+  //       resetGame();
+  //       io.sockets.emit("gameControl", gameControl);
+  //     }, 3000);
 
-    }
-    io.sockets.emit("gameControl", gameControl);
-  });
+  //   }
+  //   io.sockets.emit("gameControl", gameControl);
+  // });
 
   socket.on("flip", () => {
     flipCards();
@@ -88,19 +88,15 @@ io.on("connection", socket => {
 
   socket.on("check", async (event) => {
     check(socket.id);
-    if (checkActionsCompleted()) {
-      resetPlayerAction();
-      await dealBoard();
-      if(gameControl.gameState === "end")
-      {
-        flipCards();
-        setTimeout(() => {
-          resetGame();
-          io.sockets.emit("gameControl", gameControl);
-        }, 3000);
-  
-      }
-    }
+     if(gameControl.gameState === "end")
+     {
+       flipCards();
+       setTimeout(() => {
+         resetGame();
+         io.sockets.emit("gameControl", gameControl);
+       }, 3000);
+
+     }
     io.sockets.emit("gameControl", gameControl);
   });
 
@@ -113,6 +109,14 @@ io.on("connection", socket => {
   socket.on("call", event =>{
     call(socket.id,event);
     check(socket.id);
+    if(gameControl.gameState === "end")
+     {
+       flipCards();
+       setTimeout(() => {
+         resetGame();
+         io.sockets.emit("gameControl", gameControl);
+       }, 3000);
+      }
     io.sockets.emit("gameControl", gameControl);
   })
   socket.on("raise", event =>{

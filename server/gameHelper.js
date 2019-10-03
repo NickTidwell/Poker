@@ -81,6 +81,7 @@ const dealBoard = async() => {
   } else if (gameControl.gameState === "river") {
     getWinner();
     gameControl.gameState = "end";
+
   }
 };
 
@@ -91,15 +92,16 @@ const flipCards = () => {
 const resetGame = () => {
   gameControl.players.forEach(player => {
     player.cards = [];
+    player.playerBet = 0;
   });
   gameControl.gameBoard = [];
+  gameControl.currentBet = 0;
   gameControl.currentPot = 0;
   gameControl.gameState = "preflop";
   if (gameControl.players.length > 1) {
     dealPlayers();
   }
   flipCards();
-  return;
 };
 const getWinner = () => {
   handResults = [];
@@ -240,6 +242,10 @@ const check = socketID => {
       }
     }
   }
+  console.log(checkActionsCompleted());
+  if (checkActionsCompleted()) {
+     dealBoard();
+ }
 
 };
 module.exports = {
