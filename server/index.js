@@ -33,13 +33,14 @@ io.on("connection", socket => {
   socket.on("joinGame", () => {
     addPlayer(socket.id);
 
-    // if (gameControl.players.length > 0) {
-    //   dealPlayers();
+     if (gameControl.players.length > 1) {
+       dealPlayers();
     gameControl.players[0].activeTurn = true;
-    // }
+     }
     io.sockets.emit("gameControl", gameControl);
   });
   io.sockets.emit("gameControl", gameControl);
+
 
   socket.on("disconnect", () => {
     console.log("Disconnecting", socket.id);
@@ -53,8 +54,17 @@ io.on("connection", socket => {
       io.sockets.emit("gameControl", gameControl);
     }
   });
-  socket.on("dealBoard", () => {
-    dealBoard();
+  socket.on("dealBoard", async() => {
+    await dealBoard();
+    if(gameControl.gameState === "end")
+    {
+      flipCards();
+      setTimeout(() => {
+        resetGame();
+        io.sockets.emit("gameControl", gameControl);
+      }, 3000);
+
+    }
     io.sockets.emit("gameControl", gameControl);
   });
 

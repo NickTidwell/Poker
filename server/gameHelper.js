@@ -1,6 +1,5 @@
 const Deck = require("../src/client/deck/deck.js");
 const { rankHand } = require("./handEvaluator");
-
 const cardDeck = new Deck();
 const gameControl = {
   queuePlayers: [],
@@ -57,7 +56,7 @@ const removePlayer = socketID => {
     player => player.id !== socketID
   );
 };
-const dealBoard = () => {
+const dealBoard = async() => {
   if (gameControl.gameState === "preflop") {
     gameControl.gameState = "flop";
     resetPlayerAction();
@@ -81,9 +80,7 @@ const dealBoard = () => {
     });
   } else if (gameControl.gameState === "river") {
     getWinner();
-    console.log("Determine Winner");
-
-    flipCards();
+    gameControl.gameState = "end";
   }
 };
 
@@ -98,7 +95,11 @@ const resetGame = () => {
   gameControl.gameBoard = [];
   gameControl.currentPot = 0;
   gameControl.gameState = "preflop";
-  // cardDeck = new Deck();
+  if (gameControl.players.length > 1) {
+    dealPlayers();
+  }
+  flipCards();
+  return;
 };
 const getWinner = () => {
   handResults = [];
@@ -148,7 +149,6 @@ const getWinner = () => {
     );
 
     potToPlayer(handResults[0].id, gameControl.currentPot);
-    resetGame();
 };
 
 const potToPlayer = (socketId, potValue) => {
