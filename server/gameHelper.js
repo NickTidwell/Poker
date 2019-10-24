@@ -9,7 +9,8 @@ const gameControl = {
   gameBoard: [],
   currentPot: 0,
   currentBet: 0,
-  gameState: "preflop"
+  gameState: "preflop",
+  roomno: 0
 };
 
 const dealPlayers = () => {
@@ -32,7 +33,7 @@ const queuePlayers = socketId => {
     playerBet: 0
   });
 };
-const addPlayer = socketId => {
+const addPlayer = socketId=> {
   //Filter New Player
   const playerToAdd = gameControl.queuePlayers.filter(
     player => player.id === socketId
@@ -43,6 +44,7 @@ const addPlayer = socketId => {
   gameControl.queuePlayers = gameControl.queuePlayers.filter(
     player => player.id !== socketId
   );
+
 };
 
 const removePlayer = socketID => {
@@ -226,7 +228,6 @@ const fold = socketID => {
   console.log(playerWinner);
   potToPlayer(playerWinner.id,gameControl.currentPot);
   resetGame();
-  //TODO: give pot to player and reset game;
 };
 const check = socketID => {
   for (let i = 0; i < gameControl.players.length; i++) {

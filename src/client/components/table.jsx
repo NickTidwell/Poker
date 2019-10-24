@@ -122,7 +122,7 @@ class Table extends Component {
             id={this.state.id}
           />
           <Board board={this.state.gameControl.gameBoard} />
-          <button onClick={() => this.deal()} className="btn btn-secondary">
+          {/* <button onClick={() => this.deal()} className="btn btn-secondary">
             Deal Card
           </button>
           <button onClick={() => this.flip()} className="btn btn-secondary">
@@ -139,7 +139,7 @@ class Table extends Component {
             className="btn btn-secondary"
           >
             Deal Player
-          </button>
+          </button> */}
         </div>
         <Pot currentPot={this.state.gameControl.currentPot} />
         <Interactions

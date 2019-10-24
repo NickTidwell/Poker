@@ -2,6 +2,8 @@ import React, { Component } from 'react';
 
 const Call = props => {
   let callValue = props.currentBet - props.playerBet
+  if(callValue > props.bankroll)
+    callValue = props.bankroll
   if(props.currentBet > 0){
     return (
       <button onClick={props.call} className="btn btn-secondary">

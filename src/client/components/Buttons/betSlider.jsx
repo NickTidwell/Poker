@@ -18,13 +18,16 @@ class BetSlider extends Component {
   };
 
   render() {
+    if(this.props.bankroll - this.props.currentBet > 0)
+    {
     return (
+
       <div style={{ width: 400 }} className="slider">
         <Typography>Bet Amount</Typography>
         <Slider
           value={this.state.value}
           min={this.props.currentBet}
-          max={this.props.bankroll}
+          max={this.props.bankroll - this.props.currentBet}
           //   defaultValue={this.props.currentBet}
           valueLabelDisplay="auto"
           onChange={this.handleChange}
@@ -33,6 +36,8 @@ class BetSlider extends Component {
         ${this.state.value}
       </div>
     );
+    }
+    else return(<div/>);
   }
 }
 

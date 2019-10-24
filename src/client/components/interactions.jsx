@@ -15,11 +15,11 @@ const Interactions = props => {
         if (player.activeTurn)
           return (
             <div>
-              <Bet bet={props.bet} currentBet={props.currentBet} currentRaise={props.currentRaise} />
+              <Bet bet={props.bet} currentBet={props.currentBet} currentRaise={props.currentRaise} bankroll = {player.bankroll} />
               <Check check={props.check} currentBet={props.currentBet} />
-              <Raise raise={props.raise} currentRaise={props.currentRaise} currentBet={props.currentBet} />
+              <Raise raise={props.raise} currentRaise={props.currentRaise} currentBet={props.currentBet} bankroll = {props.bankroll} />
               <Fold fold={props.fold} />
-              <Call call={props.call} currentBet={props.currentBet} playerBet={player.playerBet}/>
+              <Call call={props.call} currentBet={props.currentBet} playerBet={player.playerBet} bankroll ={player.bankroll}/>
               <BetSlider
                 currentBet={props.currentBet}
                 bankroll={localPlayer[0].bankroll}

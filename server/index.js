@@ -102,7 +102,12 @@ io.on("connection", socket => {
 
   socket.on("fold", event =>{
 
-    fold(socket.id);
+    flipCards();
+       setTimeout(() => {
+        fold(socket.id);
+         io.sockets.emit("gameControl", gameControl);
+       }, 3000);
+    
     io.sockets.emit("gameControl", gameControl);
   });
 
