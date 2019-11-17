@@ -1,120 +1,147 @@
 const Deck = require("../src/client/deck/deck.js");
 const { rankHand } = require("./handEvaluator");
-const cardDeck = new Deck();
-const gameControl = {
-  queuePlayers: [],
-  players: [],
-  cardDeck,
-  handOver: false,
-  gameBoard: [],
-  currentPot: 0,
-  currentBet: 0,
-  gameState: "preflop",
-  roomno: 0
+const {updateBankroll,insertHandRecord, getPlayerData} = require("./sqlHelper");
+function gameControl(){
+  this.queuePlayers = [],
+  this.players= [],
+  this.cardDeck= new Deck,
+  this.handOver= false,
+  this.gameBoard= [],
+  this.currentPot= 0,
+  this.currentBet= 0,
+  this.gameState= "preflop",
+  this.roomno= 0
+}
+const rooms = [];
+var queue = [];
+
+const dealPlayers = (roomId) => {
+  rooms[roomId].board = []; 
+  rooms[roomId].cardDeck.shuffle();
+  for (let i = 0; i < rooms[roomId].players.length; i++)
+  {
+    if(rooms[roomId].players[i] !== undefined)
+    {
+      rooms[roomId].players[i].cards = rooms[roomId].cardDeck.dealHand(2);
+    }
+  }
 };
 
-const dealPlayers = () => {
-  gameControl.board = [];
-  gameControl.cardDeck.shuffle();
-  console.log(gameControl.players[0]);
-  for (let i = 0; i < gameControl.players.length; i++)
-    gameControl.players[i].cards = gameControl.cardDeck.dealHand(2);
-};
+const createLobby = (roomId) => {
 
-const queuePlayers = socketId => {
-  gameControl.queuePlayers.push({
-    //TODO: make this data come from DB
+  var control = new gameControl();
+  rooms.push(control);
+ 
+}
+const queuePlayers = (socketId,roomno,db_id,p_name, bankroll) => {
+  
+  queue.push({
     id: socketId,
-    name: "",
-    bankroll: 1000,
+    db_id: db_id,
+    name: p_name,
+    bankroll: bankroll,
     cards: [],
     activeTurn: false,
     actionCompleted: false,
-    playerBet: 0
+    playerBet: 0,
+    roomId: roomno
   });
 };
-const addPlayer = socketId=> {
+
+const addPlayer = (socketId,roomno)=> {
   //Filter New Player
-  const playerToAdd = gameControl.queuePlayers.filter(
+  const playerToAdd = queue.filter(
     player => player.id === socketId
   )[0];
+
   //Add New Player
-  gameControl.players.push(playerToAdd);
+  rooms[roomno].players.push(playerToAdd);
   //Remove New Player form queue
-  gameControl.queuePlayers = gameControl.queuePlayers.filter(
+  queue = queue.filter(
     player => player.id !== socketId
   );
 
 };
 
-const removePlayer = socketID => {
+const removePlayer = (socketID,roomId) => {
   //Remove Player
-  gameControl.players = gameControl.players.filter(
+  rooms[roomId].players = rooms[roomId].players.filter(
     player => player.id !== socketID
   );
   // resetGame();
   //Remove player from queue
-  gameControl.queuePlayers = gameControl.queuePlayers.filter(
+  queue = queue.filter(
     player => player.id !== socketID
   );
 };
-const dealBoard = async() => {
-  if (gameControl.gameState === "preflop") {
-    gameControl.gameState = "flop";
-    resetPlayerAction();
 
-    gameControl.cardDeck.dealHand(3).forEach(card => {
-      gameControl.gameBoard.push(card);
-    });
-  } else if (gameControl.gameState === "flop") {
-    gameControl.gameState = "turn";
-    resetPlayerAction();
+// async function getUserData (db_id){
+//   console.log("GetUserData")
+//   getPlayerData(db_id)
+//   .then(function(rows) {
+//     console.log(rows);
+//     return rows;
+//   })
+//   .catch(() => console.log("ERROR"));
 
-    gameControl.cardDeck.dealHand(1).forEach(card => {
-      gameControl.gameBoard.push(card);
-    });
-  } else if (gameControl.gameState === "turn") {
-    gameControl.gameState = "river";
-    resetPlayerAction();
+// };
+const dealBoard = async(roomId) => {
+  if (rooms[roomId].gameState === "preflop") {
+    rooms[roomId].gameState = "flop";
+    resetPlayerAction(roomId);
 
-    gameControl.cardDeck.dealHand(1).forEach(card => {
-      gameControl.gameBoard.push(card);
+    rooms[roomId].cardDeck.dealHand(3).forEach(card => {
+      rooms[roomId].gameBoard.push(card);
     });
-  } else if (gameControl.gameState === "river") {
-    getWinner();
-    gameControl.gameState = "end";
+  } else if (rooms[roomId].gameState === "flop") {
+    rooms[roomId].gameState = "turn";
+    resetPlayerAction(roomId);
+
+    rooms[roomId].cardDeck.dealHand(1).forEach(card => {
+      rooms[roomId].gameBoard.push(card);
+    });
+  } else if (rooms[roomId].gameState === "turn") {
+    rooms[roomId].gameState = "river";
+    resetPlayerAction(roomId);
+
+    rooms[roomId].cardDeck.dealHand(1).forEach(card => {
+      rooms[roomId].gameBoard.push(card);
+    });
+  } else if (rooms[roomId].gameState === "river") {
+    getWinner(roomId);
+    rooms[roomId].gameState = "end";
 
   }
 };
 
-const flipCards = () => {
-  gameControl.handOver = !gameControl.handOver;
+const flipCards = (roomId) => {
+  rooms[roomId].handOver = !rooms[roomId].handOver;
 };
 
-const resetGame = () => {
-  gameControl.players.forEach(player => {
+const resetGame = (roomId) => {
+  rooms[roomId].players.forEach(player => {
     player.cards = [];
     player.playerBet = 0;
   });
-  gameControl.gameBoard = [];
-  gameControl.currentBet = 0;
-  gameControl.currentPot = 0;
-  gameControl.gameState = "preflop";
-  if (gameControl.players.length > 1) {
-    dealPlayers();
+  rooms[roomId].gameBoard = [];
+  rooms[roomId].currentBet = 0;
+  rooms[roomId].currentPot = 0;
+  rooms[roomId].gameState = "preflop";
+  if (rooms[roomId].players.length > 1) {
+    dealPlayers(roomId);
   }
-  flipCards();
+  flipCards(roomId);
 };
-const getWinner = () => {
+const getWinner = (roomId) => {
   handResults = [];
-  gameControl.players.forEach(player => {
+  rooms[roomId].players.forEach(player => {
     playerHandRank = {
       name: "",
       id: "",
       rank: 0,
       hand: []
     };
-    var rankHandData = rankHand(player.cards.concat(gameControl.gameBoard));
+    var rankHandData = rankHand(player.cards.concat(rooms[roomId].gameBoard));
 
     playerHandRank.id = player.id;
     playerHandRank.name = player.name;
@@ -151,101 +178,119 @@ const getWinner = () => {
     console.log(
       `${handResults[0].id} Won the match with a ${handResults[0].rank}`
     );
+    const p1 = rooms[roomId].players.filter(
+      player => player.id === handResults[0].id
+    )[0];
 
-    potToPlayer(handResults[0].id, gameControl.currentPot);
+    const p2 = rooms[roomId].players.filter(
+      player => player.id === handResults[1].id
+    )[0];
+    potToPlayer(handResults[1].id, roomId);
+
+    insertHandRecord(p1.db_id,handResults[0].rank,1);
+    insertHandRecord(p2.db_id,handResults[1].rank,0);
+
 };
 
-const potToPlayer = (socketId, potValue) => {
-  const winningPlayer = gameControl.players.filter(
+const potToPlayer = (socketId,roomId) => {
+  const winningPlayer = rooms[roomId].players.filter(
     player => player.id === socketId
   )[0];
 
-  winningPlayer.bankroll += gameControl.currentPot;
+  const losingPlayer = rooms[roomId].players.filter(
+    player => player.id !== socketId
+  )[0];
+
+  winningPlayer.bankroll += rooms[roomId].currentPot;
+
+  updateBankroll(winningPlayer.bankroll,winningPlayer.db_id);
+  updateBankroll(losingPlayer.bankroll,losingPlayer.db_id);
+
 }
-const bet = (socketId, betVal) => {
-  const currentPlayer = gameControl.players.filter(
+const bet = (socketId, betVal,roomId) => {
+  const currentPlayer = rooms[roomId].players.filter(
     player => player.id === socketId
   )[0];
 
   //Add money to pot and subtract from user bank
-  gameControl.currentPot += betVal;
-  gameControl.currentBet += betVal;
+  rooms[roomId].currentPot += betVal;
+  rooms[roomId].currentBet += betVal;
   currentPlayer.bankroll -= betVal;
   currentPlayer.playerBet += betVal;
 
   console.log(`Player ${currentPlayer.id} is betting ${betVal}`);
-  gameControl.players.forEach(player => {
+  rooms[roomId].players.forEach(player => {
     player.actionCompleted = false;
   });};
 
-const call = (socketID, callVal) => {
+const call = (socketID, callVal,roomId) => {
   console.log("CallVal: " + callVal);
-  const currentPlayer = gameControl.players.filter(
+  const currentPlayer = rooms[roomId].players.filter(
     player => player.id === socketID
   )[0];
 
-  gameControl.currentPot += callVal - currentPlayer.playerBet;
+  rooms[roomId].currentPot += callVal - currentPlayer.playerBet;
   currentPlayer.bankroll -= callVal - currentPlayer.playerBet;
 };
 
-const raise = (socketId, betVal) => {
-  const currentPlayer = gameControl.players.filter(
+const raise = (socketId, betVal,roomId) => {
+  const currentPlayer = rooms[roomId].players.filter(
     player => player.id === socketId
   )[0];
 
-  let raiseVal = betVal + gameControl.currentBet;
+  let raiseVal = betVal + rooms[roomId].currentBet;
   //Add money to pot and subtract from user bank
-  gameControl.currentPot += raiseVal - currentPlayer.playerBet;
+  rooms[roomId].currentPot += raiseVal - currentPlayer.playerBet;
   currentPlayer.bankroll -= raiseVal - currentPlayer.playerBet;
   currentPlayer.playerBet += raiseVal - currentPlayer.playerBet;
-  gameControl.currentBet += betVal;
+  rooms[roomId].currentBet += betVal;
 
   console.log(`Player ${currentPlayer.id} is raising ${betVal}`);
-  gameControl.players.forEach(player => {
+  rooms[roomId].players.forEach(player => {
     player.actionCompleted = false;
   });
 };
-const checkActionsCompleted = () => {
-  for (let i = 0; i < gameControl.players.length; i++) {
-    if (gameControl.players[i].actionCompleted === false) return false;
+const checkActionsCompleted = (roomId) => {
+  for (let i = 0; i < rooms[roomId].players.length; i++) {
+    if (rooms[roomId].players[i].actionCompleted === false) return false;
   }
   return true;
 };
 
-const resetPlayerAction = () => {
-  for (let i = 0; i < gameControl.players.length; i++) {
-    gameControl.players[i].actionCompleted = false;
-    gameControl.players[i].playerBet = 0;
+const resetPlayerAction = (roomId) => {
+  for (let i = 0; i < rooms[roomId].players.length; i++) {
+    rooms[roomId].players[i].actionCompleted = false;
+    rooms[roomId].players[i].playerBet = 0;
   }
-  gameControl.currentBet = 0;
+  rooms[roomId].currentBet = 0;
 };
 
-const fold = socketID => {
-  const playerWinner = gameControl.players.filter(
+const fold = (socketID,roomId) => {
+  const playerWinner = rooms[roomId].players.filter(
     player => player.id !== socketID
   )[0];
 
   console.log(playerWinner);
-  potToPlayer(playerWinner.id,gameControl.currentPot);
-  resetGame();
+  potToPlayer(playerWinner.id,roomId);
+  resetGame(roomId);
 };
-const check = socketID => {
-  for (let i = 0; i < gameControl.players.length; i++) {
-    if (gameControl.players[i].id === socketID) {
-      gameControl.players[i].actionCompleted = true;
+const check = (socketID,roomId) => {
+  console.log(roomId);
+  for (let i = 0; i < rooms[roomId].players.length; i++) {
+    if (rooms[roomId].players[i].id === socketID) {
+      rooms[roomId].players[i].actionCompleted = true;
 
-      if (i + 1 < gameControl.players.length) {
-        gameControl.players[i].activeTurn = false;
-        gameControl.players[i + 1].activeTurn = true;
+      if (i + 1 < rooms[roomId].players.length) {
+        rooms[roomId].players[i].activeTurn = false;
+        rooms[roomId].players[i + 1].activeTurn = true;
       } else {
-        gameControl.players[0].activeTurn = true;
-        gameControl.players[i].activeTurn = false;
+        rooms[roomId].players[0].activeTurn = true;
+        rooms[roomId].players[i].activeTurn = false;
       }
     }
   }
-  console.log(checkActionsCompleted());
-  if (checkActionsCompleted()) {
-     dealBoard();
+  if (checkActionsCompleted(roomId)) {
+     dealBoard(roomId);
  }
 
 };
@@ -264,6 +309,8 @@ module.exports = {
   fold,
   call,
   checkActionsCompleted,
-  resetPlayerAction
+  resetPlayerAction,
+  createLobby,
+  rooms
 
 };

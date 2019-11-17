@@ -5,6 +5,10 @@ import Card from "./card";
 import Board from "./board";
 import Interactions from "./interactions";
 import Pot from "./pot";
+import Signup from "./signup";
+import SignIn from "./signin";
+import UserData from "./UserData";
+
 let socket;
 
 class Table extends Component {
@@ -12,9 +16,22 @@ class Table extends Component {
     super(props);
     this.state = {
       id: "",
+      db_id: "",
       joined: false,
+      signUp: true,
+      signIn: false,
+      signUpSuccess: false,
+      signInSuccess: false,
+      viewUserData: false,
       name: "",
+      email: "",
+      password: "",
       currentRaise: 0,
+      roomId: 0,
+      playerQueryData: {
+        hands_played: 0,
+        hands_won: 0
+      },
       gameControl: {
         queuePlayers: [],
         players: [],
@@ -30,90 +47,190 @@ class Table extends Component {
     socket.on("gameControl", gameControl => {
       this.setState({ gameControl });
     });
-
     socket.on("localId", id => {
       this.setState({ id });
     });
-    this.handleChange = this.handleChange.bind(this);
-    this.handleSubmit = this.handleSubmit.bind(this);
+
+    socket.on("roomId", roomId => {
+      this.setState({ roomId });
+    });
+
+    socket.on("signUpSuccess", signUpSuccess => {
+      this.setState({ signUpSuccess });
+    });
+
+    socket.on("signInSuccess", signInSuccess => {
+      this.setState({ signInSuccess });
+    });
+
+    socket.on("setName", name => {
+      this.setState({ name });
+    });
+
+    socket.on("setDBID", db_id => {
+      this.setState({db_id});
+    });
+
+    socket.on("setQueryData" , playerQueryData => {
+      this.setState({playerQueryData});
+    });
+
+    this.handleNameChange = this.handleNameChange.bind(this);
+    this.handleEmailChange = this.handleEmailChange.bind(this);
+    this.handlePasswordChange = this.handlePasswordChange.bind(this);
   }
 
+  getUserData = () => {
+    this.setState({viewUserData : !this.state.viewUserData});
+    const dbID = this.state.db_id;
+    socket.emit("getUserData", dbID);
+  };
   call = () => {
-    console.log("emitting Call");
-    socket.emit("call", this.state.gameControl.currentBet);
-  }
+    socket.emit("call", this.state.gameControl.currentBet, this.state.roomId);
+  };
   raise = () => {
-    console.log("emitting Raise");
     const betAmmount = this.state.currentRaise;
-    socket.emit("raise", betAmmount);
-    this.setState({currentRaise : 0});
-
+    socket.emit("raise", betAmmount, this.state.roomId);
+    this.setState({ currentRaise: 0 });
   };
   bet = () => {
-    console.log("emitting Bet");
     const betAmmount = this.state.currentRaise;
-    socket.emit("bet", betAmmount);
-    this.setState({currentRaise : 0});
+    socket.emit("bet", betAmmount, this.state.roomId);
+    this.setState({ currentRaise: 0 });
   };
   fold = () => {
-    console.log("emitting fold");
-    socket.emit("fold");
+    socket.emit("fold", this.state.roomId);
   };
   changeBet = currentRaise => {
-    console.log("Bet State Changed");
     this.setState({ currentRaise });
   };
   check = () => {
-    console.log("emitting Check");
-    socket.emit("check");
+    socket.emit("check", this.state.roomId);
   };
   flip = () => {
-    socket.emit("flip");
+    socket.emit("flip", this.state.roomId);
   };
   deal = () => {
-    socket.emit("dealBoard");
+    socket.emit("dealBoard", this.state.roomId);
   };
   joinGame = () => {
-    socket.emit("joinGame");
+    socket.emit("joinGame", this.state.roomId);
     this.setState({ joined: true });
   };
   resetGame = () => {
-    socket.emit("resetGame");
+    socket.emit("resetGame", this.state.roomId);
   };
   dealPlayer = () => {
-    socket.emit("dealPlayer");
+    socket.emit("dealPlayer", this.state.roomId);
   };
 
-  handleChange(event) {
+  handleNameChange(event) {
     this.setState({ name: event.target.value });
-    console.log("Name Set");
   }
-  handleSubmit(event) {
-    alert("Your favorite flavor is: " + this.state.value);
-    event.preventDefault();
+
+  handleEmailChange(event) {
+    this.setState({ email: event.target.value });
   }
+
+  handlePasswordChange(event) {
+    this.setState({ password: event.target.value });
+  }
+
+  signup = () => {
+    console.log("Signup Emmitted");
+    socket.emit(
+      "signup",
+      this.state.name,
+      this.state.email,
+      this.state.password
+    );
+
+    this.gotoSignIn();
+  };
+
+  signIn = () => {
+    console.log("Emmitting Sign In");
+    socket.emit("signIn", this.state.email, this.state.password);
+    this.setState({ signIn: false });
+    //this.joinGame();
+  };
+  gotoSignIn = () => {
+    this.setState({ signUp: false });
+    this.setState({ signIn: true });
+  };
+
+  gotoSignUp = () => {
+    this.setState({ signUp: true });
+    this.setState({ signIn: false });
+  };
+
   render() {
-    if (this.state.joined === false) {
+
+    if (this.state.signUp === true) {
       return (
         <div>
-          <form>
-            <p>Enter Name</p>
-            <input type="text" onChange={this.handleChange} />
-            <button
-              onClick={() => this.handleSubmit}
-              onClick={() => this.joinGame()}
-              className="btn btn-secondary"
-            >
-              Join Game
-            </button>
-          </form>
+          <Signup
+            signup={this.signup}
+            handleNameChange={this.handleNameChange}
+            handleEmailChange={this.handleEmailChange}
+            handlePasswordChange={this.handlePasswordChange}
+            gotoSignIn={this.gotoSignIn}
+          />
+          <div> {this.state.name}</div>
+          <div> {this.state.email}</div>
+          <div> {this.state.password}</div>
+        </div>
+      );
+    } else if (this.state.signIn === true) {
+      return (
+        <div>
+          <SignIn
+            SignIn={this.signIn}
+            gotoSignUp={this.gotoSignUp}
+            handleEmailChange={this.handleEmailChange}
+            handlePasswordChange={this.handlePasswordChange}
+          />
+        </div>
+      );
+    } else if (
+      this.state.signInSuccess === false &&
+      this.state.signUpSuccess === false
+    ) {
+      return (
+        <div>
+          <p>Could Not Sign In</p>
+          <button
+            style={{ display: "block", marginLeft: "25px" }}
+            onClick={this.gotoSignIn}
+            //onClick={() => this.joinGame()}
+            className="btn btn-secondary"
+          >
+            Return
+          </button>
         </div>
       );
     }
+
     return (
       <div>
         <div>
-          <p>Current User: {this.state.name}</p>
+          <div>
+            <p style={{ display: "inline-block", margin: "0" }}>
+              Current User: {this.state.name}
+            </p>
+            <button
+              style={{ float: "right" }}
+              onClick={() => this.getUserData()}
+              className="btn btn-secondary"
+            >
+              Show Data
+            </button>
+          </div>
+
+          <UserData
+            viewUserData={this.state.viewUserData}
+            playerQueryData={this.state.playerQueryData}
+          />
 
           <Card players={this.state.gameControl.players} id={this.state.id} />
           <Enemy
@@ -122,12 +239,13 @@ class Table extends Component {
             id={this.state.id}
           />
           <Board board={this.state.gameControl.gameBoard} />
-          {/* <button onClick={() => this.deal()} className="btn btn-secondary">
+          {
+            <button onClick={() => this.flip()} className="btn btn-secondary">
+              Flip Cards
+            </button> /* <button onClick={() => this.deal()} className="btn btn-secondary">
             Deal Card
           </button>
-          <button onClick={() => this.flip()} className="btn btn-secondary">
-            Flip Cards
-          </button>
+          
           <button
             onClick={() => this.resetGame()}
             className="btn btn-secondary"
@@ -139,7 +257,8 @@ class Table extends Component {
             className="btn btn-secondary"
           >
             Deal Player
-          </button> */}
+          </button> */
+          }
         </div>
         <Pot currentPot={this.state.gameControl.currentPot} />
         <Interactions

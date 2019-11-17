@@ -1,14 +1,11 @@
 import React, { Component } from "react";
 const Card = (props) => {
   const playersInLobby = props.players;
-  console.log(playersInLobby);
-
   const playerID = props.id;
 	const localPlayer = playersInLobby.filter((player) => player.id === playerID);
   return (
     <div className="playerCards">
       {localPlayer.map(player => {
-        console.log(localPlayer);
         if (player.cards.length > 0) {
           return (
             <div>
