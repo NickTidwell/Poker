@@ -3,7 +3,7 @@ const bodyParser = require("body-parser");
 const pino = require("express-pino-logger")();
 const Deck = require("../src/client/deck/deck.js");
 const mysql = require("mysql");
-const {updateBankroll,insertHandRecord, getPlayerData} = require("./sqlHelper");
+const {deleteUser, getPlayerData,buyBackUser} = require("./sqlHelper");
 
 const connection = mysql.createConnection({
   host: "localhost",
@@ -29,7 +29,8 @@ const {
   resetPlayerAction,
   createLobby,
   rooms,
-  getUserData
+  getUserData,
+  buyBack
 } = require("./gameHelper");
 const app = express();
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -68,8 +69,8 @@ io.on("connection", socket => {
     console.log("Joined: " + roomno);
     addPlayer(socket.id, roomno);
 
-    console.log(rooms[roomno].players[0]);
-    console.log(rooms[roomno].players[1]);
+    // console.log(rooms[roomno].players[0]);
+    // console.log(rooms[roomno].players[1]);
 
     if (rooms[roomno].players.length === 2) {
       dealPlayers(roomno);
@@ -131,14 +132,31 @@ io.on("connection", socket => {
     io.sockets.in(roomId).emit("gameControl", rooms[roomId]);
   });
 
-  socket.on("getUserData" , async (db_id) => {
+  socket.on("getUserData" , async (db_id,filterVal) => {
       //Send Query Return Socket
-      getPlayerData(db_id)
+      console.log("FilterVal In Index: " + filterVal);
+      if(db_id === "")
+        {
+          console.log('Invalid ID');
+          return;
+        }
+      getPlayerData(db_id, filterVal)
       .then(function(rows) {
         socket.emit("setQueryData", rows);
        })
       .catch(() => console.log("ERROR"));
       
+  });
+
+  socket.on("deleteAccount", (db_id) => {
+    deleteUser(db_id);
+  });
+
+  socket.on("buyback", (db_id, roomId) => {
+    buyBackUser(db_id);
+    buyBack(socket.id,roomId);
+    io.sockets.in(roomId).emit("gameControl", rooms[roomId]);
+
   });
   socket.on("signIn", (email, pass) => {
     var sql = `select * from player where email = '${email}' and password = '${pass}'`;

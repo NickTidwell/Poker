@@ -75,16 +75,6 @@ const removePlayer = (socketID,roomId) => {
   );
 };
 
-// async function getUserData (db_id){
-//   console.log("GetUserData")
-//   getPlayerData(db_id)
-//   .then(function(rows) {
-//     console.log(rows);
-//     return rows;
-//   })
-//   .catch(() => console.log("ERROR"));
-
-// };
 const dealBoard = async(roomId) => {
   if (rooms[roomId].gameState === "preflop") {
     rooms[roomId].gameState = "flop";
@@ -223,6 +213,13 @@ const bet = (socketId, betVal,roomId) => {
     player.actionCompleted = false;
   });};
 
+const buyBack=(socketID,roomId) => {
+  const currentPlayer = rooms[roomId].players.filter(
+    player => player.id === socketID
+  )[0];
+
+  currentPlayer.bankroll = 1000;
+};
 const call = (socketID, callVal,roomId) => {
   console.log("CallVal: " + callVal);
   const currentPlayer = rooms[roomId].players.filter(
@@ -311,6 +308,7 @@ module.exports = {
   checkActionsCompleted,
   resetPlayerAction,
   createLobby,
-  rooms
+  rooms,
+  buyBack
 
 };

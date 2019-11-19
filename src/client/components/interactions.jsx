@@ -5,6 +5,7 @@ import Fold from "./Buttons/fold";
 import Raise from "./Buttons/raise";
 import BetSlider from "./Buttons/betSlider";
 import Call from "./Buttons/call";
+import BuyBack from "./buyBack";
 const Interactions = props => {
   const players = props.players;
   const playerID = props.id;
@@ -12,6 +13,7 @@ const Interactions = props => {
   return (
     <div>
       {localPlayer.map(player => {
+
         if (player.activeTurn)
           return (
             <div>
@@ -25,6 +27,7 @@ const Interactions = props => {
                 bankroll={localPlayer[0].bankroll}
                 changeBet={props.changeBet}
               />
+
             </div>
           );
       })}

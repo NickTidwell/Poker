@@ -8,6 +8,7 @@ import Pot from "./pot";
 import Signup from "./signup";
 import SignIn from "./signin";
 import UserData from "./UserData";
+import BuyBack from "./buyBack";
 
 let socket;
 
@@ -30,7 +31,10 @@ class Table extends Component {
       roomId: 0,
       playerQueryData: {
         hands_played: 0,
-        hands_won: 0
+        hands_won: 0,
+        hands_lost: 0,
+        bankroll: 0,
+        avg_strength: 0.0
       },
       gameControl: {
         queuePlayers: [],
@@ -68,11 +72,11 @@ class Table extends Component {
     });
 
     socket.on("setDBID", db_id => {
-      this.setState({db_id});
+      this.setState({ db_id });
     });
 
-    socket.on("setQueryData" , playerQueryData => {
-      this.setState({playerQueryData});
+    socket.on("setQueryData", playerQueryData => {
+      this.setState({ playerQueryData });
     });
 
     this.handleNameChange = this.handleNameChange.bind(this);
@@ -80,10 +84,26 @@ class Table extends Component {
     this.handlePasswordChange = this.handlePasswordChange.bind(this);
   }
 
-  getUserData = () => {
-    this.setState({viewUserData : !this.state.viewUserData});
+  getUserData = (filterVal, toggle) => {
     const dbID = this.state.db_id;
-    socket.emit("getUserData", dbID);
+    socket.emit("getUserData", dbID, filterVal);
+    this.setState({ viewUserData: toggle });
+  };
+
+  deleteAccount = () => {
+    const dbID = this.state.db_id;
+    socket.emit("deleteAccount", dbID);
+    this.setState({ signInSuccess: false });
+    this.setState({ signUpSuccess: false });
+    this.gotoSignUp();
+  };
+
+  buyback = () => {
+    const dbID = this.state.db_id;
+    socket.emit("buyback", dbID, this.state.roomId);
+  }
+  toggleUserData = () => {
+    this.setState({ viewUserData: !this.state.viewUserData });
   };
   call = () => {
     socket.emit("call", this.state.gameControl.currentBet, this.state.roomId);
@@ -165,7 +185,6 @@ class Table extends Component {
   };
 
   render() {
-
     if (this.state.signUp === true) {
       return (
         <div>
@@ -215,21 +234,33 @@ class Table extends Component {
       <div>
         <div>
           <div>
-            <p style={{ display: "inline-block", margin: "0" }}>
-              Current User: {this.state.name}
-            </p>
-            <button
-              style={{ float: "right" }}
-              onClick={() => this.getUserData()}
-              className="btn btn-secondary"
+            <p
+              style={{
+                display: "inline-block",
+                margin: "0",
+                paddingTop: "20px"
+              }}
             >
-              Show Data
-            </button>
+              Current User: {this.state.name}
+              <button
+                onClick={() => this.deleteAccount()}
+                className="btn btn-secondary"
+              >
+                DeleteAccount
+              </button>
+            </p>
           </div>
-
+          <BuyBack
+            players={this.state.gameControl.players}
+            id={this.state.id}
+            buyback={this.buyback}
+          />
           <UserData
             viewUserData={this.state.viewUserData}
             playerQueryData={this.state.playerQueryData}
+            playerName={this.state.name}
+            getUserData={this.getUserData}
+            toggleUserData={this.toggleUserData}
           />
 
           <Card players={this.state.gameControl.players} id={this.state.id} />
@@ -240,9 +271,10 @@ class Table extends Component {
           />
           <Board board={this.state.gameControl.gameBoard} />
           {
-            <button onClick={() => this.flip()} className="btn btn-secondary">
-              Flip Cards
-            </button> /* <button onClick={() => this.deal()} className="btn btn-secondary">
+            // <button onClick={() => this.flip()} className="btn btn-secondary">
+            //   Flip Cards
+            // </button> 
+            /* <button onClick={() => this.deal()} className="btn btn-secondary">
             Deal Card
           </button>
           

@@ -1,5 +1,5 @@
 //npm run dev
-console.log("Evaluating Hand");
+// console.log("Evaluating Hand");
 const board = ["KD", "KH", "10H", "8S", "JS"];
 const hand = ["JH", "9S"];
 
@@ -179,10 +179,4 @@ module.exports = {
   rankHand
 };
 
-// console.log(nOfAKind(board.concat(hand),2));
-// console.log(isFlush(board.concat(hand)));
-// console.log(isStraight(board.concat(hand)));
-// console.log(isFullHouse(board.concat(hand)));
-// console.log(isTwoPair(board.concat(hand)));
-// console.log(getHighCard(board.concat(hand)));
-console.log(rankHand(board.concat(hand)));
+
